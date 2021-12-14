@@ -40,8 +40,50 @@ function sha256(text)
 
             w[i] = add(add(add(w[i-16], s0), w[i-7]), s1)
         end
-    
+
+        #define temp variables for 8 predifined hash values
+        h1 = h[1]
+        h2 = h[2]
+        h3 = h[3]
+        h4 = h[4]
+        h5 = h[5]
+        h6 = h[6]
+        h7 = h[7]
+        h8 = h[8]
+
+        for j in 1:64 #loop 64 times. The following math I don't entirely understand, it is part of the hash algorithm, however I can't entirely explain it
+            S1 = xorxor.(circshift(h5, 6), circshift(h5, 11), circshift(h5, 25)) 
+            ch = xor_.(and_.(h5, h6), and_.(not_.(h5), h7))
+            temp1 = add(add(add(add(h8, S1 ), ch), k[j]), w[j])
+
+            S0 = xorxor.(circshift(h1, 2), circshift(h1, 13), circshift(h1, 22))
+            m = xorxor.(and_.(h1, h2), and_.(h1, h3), and_.(h2, h3))
+            temp2 = add(S0, m)
+            
+            #reassign temp values 
+            h8 = h7
+            h7 = h6
+            h6 = h5
+            h5 = add(h4, temp1)
+            h4 = h3
+            h3 = h2
+            h2 = h1
+            h1 = add(temp1, temp2)
+
+        end
+
+        #final calculations
+        h = [ add(h[1], h1), add(h[2], h2), add(h[3], h3), add(h[4], h4), add(h[5], h5), add(h[6], h6), add(h[7], h7), add(h[8], h8) ]
+
     end
+
+    digest = "" #empty string to create hash string
+
+    for val in h #loop through all above final values
+        digest *= bin2hex(val) #convert each value to hex and then append to digest
+    end
+
+    digest
 
 
 end
@@ -53,7 +95,7 @@ function text_to_bin(text)
     """
 
     #split text into list of 0s and 1s representing binary representation of text (this took some tinkering to find. Basically, get bytes of string, convert bytes to binary, split binary into list (this creates an array of lists), concatinate all lists into one)
-    vcat(split.(bitstring.(codeunits(text)),"")...)
+    string.(vcat(split.(bitstring.(codeunits(text)),"")...))
 
 end
 
@@ -67,7 +109,7 @@ function process_text(text)
 
     len = length(bits) #get length of bit list
 
-    message_len = string.(digits(len, base=2,pad=16) |> reverse) #get bit list representation of message length (solution found here: https://discourse.julialang.org/t/convert-integer-to-bits-array/26663)
+    message_len = string.(digits(len, base=2,pad=64) |> reverse) #get bit list representation of message length (solution found here: https://discourse.julialang.org/t/convert-integer-to-bits-array/26663)
 
     #split into 3 cases: <448, =448, >448
     if len < 448 #if length of bits is less that 448
@@ -115,7 +157,7 @@ function initialize_constants(constants)
     out = [] #empty list to append output to 
 
     for constant in constants #loop through all constants
-        push!(out, split(string(parse(Int, constant; base=16); base=2),"")) #convert hexidecimal constant to binary list and then append to output list
+        push!(out, extend_to_length(split(string(parse(Int, constant; base=16); base=2),""), 32; side="l")) #convert hexidecimal constant to binary list and then append to output list
 
     end
 
@@ -170,40 +212,17 @@ function extend_to_length(value, length; side="r")
     """
 
     if side == "r"
-        split(rpad(join(value), length, "0"), "") #join list into string, extend through right padding, convert back to list
+        string.(split(rpad(join(value), length, "0"), "")) #join list into string, extend through right padding, convert back to list
     elseif side == "l"
-        split(lpad(join(value), length, "0"), "") #join list into string, extend through left padding, convert back to list
+        string.(split(lpad(join(value), length, "0"), "")) #join list into string, extend through left padding, convert back to list
     end
 
 end
 
-function split_list(value, length)
-    """
-    Splits list into smaller lists of desired length. 
-
-    Parameters
-    ----------
-
-    value : list
-        Binary number in list format 
-
-    length : int
-        Desired length for smaller lists
-
-    Returns
-    -------
-
-    out : list
-        List of multiple smaller lists
-
-    """
-
-    #I found this here: https://docs.julialang.org/en/v1/base/iterators/#Base.Iterators.partition
-    collect(Iterators.partition(value, length))
-
-end
 
 ### utility functions ###
+
+split_list(value, len) = [value[i:min(i + len - 1, end)] for i in 1:len:length(value)] #function to split list into chunks of certain length. Found here: https://discourse.julialang.org/t/breaking-a-list-into-chunks-of-size-n/32697/3
 
 isTrue(x) = return x == "1" #if 1 return true, else return false
 
@@ -229,7 +248,7 @@ xor_(x,y) = string( xor( parse(Int, x), parse(Int, y) ) ) #define xor to work on
 
 xorxor(x,y,z) = string(xor(parse(Int, x), xor(parse(Int, y), parse(Int, z)))) #return 1 if odd number of 1s, else 0. (Takes in strings and returns strings, has to convert to int for xor)
 
-shr(x, n) = append!(fill("0", n), x)[1:length(t)] #shift values to right
+shr(x, n) = append!(fill("0", n), x)[1:length(x)] #shift values to right
 
 function maj(x,y,z)
     """
@@ -245,28 +264,54 @@ function maj(x,y,z)
     end
 end
 
-function add(x, y)
+# function add(x, y)
+#     """
+#     Add two binary numbers together (input as lists). Need to keep same length
+
+#     """
+
+#     maxLength = max(length(x), length(y)) #get make length of two to keep output at same length
+
+#     binarySum = parse(BigInt, join(x); base=2 ) + parse(BigInt, join(y); base=2) #convert the two to integers and add them 
+
+#     sumBitstring = bitstring(binarySum) #get bitstring of sum
+
+#     diffLength = maxLength - length(sumBitstring) #get difference between maximum length of output and current length of output 
+
+#     if diffLength > 0 #if this difference is less than 0, indicating it is over max length 
+#         sumBitstring = sumBitstring[1+(-diffLength):length(sumBitstring)] #shorten bitstring to correct length
+#     elseif diffLength < 0 #if this difference is above 0, then something is wrong probably because it has shrunk. So increase size to correct length
+#         lpad(sumBitstring, maxLength, "0") #extend to correct length
+#     end
+
+#     split(sumBitstring, "") #convert to list and return
+
+# end
+
+
+function add(x,y)
     """
-    Add two binary numbers together (input as lists). Need to keep same length
+    Addes two binary numbers together and keeps same length (no carrying)
 
     """
 
-    maxLength = max(length(x), length(y)) #get make length of two to keep output at same length
+    len = length(x) #store length
+    out = Vector(fill("0", len)) #create empty output vector
 
-    binarySum = parse(BigInt, join(x); base=2 ) + parse(BigInt, join(y); base=2) #convert the two to integers and add them 
+    c = 0 #0 carry over bit 
 
-    sumBitstring = bitstring(binarySum) #get bitstring of sum
+    for i in len:-1:1 #loop over indicies from max length to 1
+        #compute xorxor
+        out[i] = xorxor(x[i], y[i], string(c)) 
 
-    diffLength = maxLength - length(sumBitstring) #get difference between maximum length of output and current length of output 
-
-    if diffLength > 0 #if this difference is less than 0, indicating it is over max length 
-        sumBitstring = sumBitstring[1+(-diffLength):length(sumBitstring)] #shorten bitstring to correct length
-    elseif diffLength < 0 #if this difference is above 0, then something is wrong probably because it has shrunk. So increase size to correct length
-        lpad(sumBitstring, maxLength, "0") #extend to correct length
+        #carry
+        c = maj(x[i], y[i], string(c))
     end
 
-    split(sumBitstring, "") #convert to list and return
+    out
 
 end
 
-sha256("test")
+
+
+println(sha256("test"))
