@@ -13,7 +13,21 @@ k = ["428a2f98", "71374491", "b5c0fbcf", "e9b5dba5", "3956c25b", "59f111f1", "92
 
 function sha256(text)
     """
+    Computes the sha256 hash algorithm on some input text. Will return in 
+    hex digest form. 
 
+    Parameters
+    ----------
+
+    text : string
+        Raw, input text to run through hash algorithm 
+
+    Returns
+    -------
+
+    digest : string
+        Hex digest of output of hash algorthm. 64 characters in 
+        length.
 
     """
 
@@ -92,6 +106,19 @@ function text_to_bin(text)
     """
     Convert text to list binary representation 
 
+    Parameters
+    ----------
+
+    text : string
+        Text in normal string format 
+
+    Returns
+    -------
+
+    out : list
+        List of strings (either "1" or "0") representing input text in
+        binary representation.
+
     """
 
     #split text into list of 0s and 1s representing binary representation of text (this took some tinkering to find. Basically, get bytes of string, convert bytes to binary, split binary into list (this creates an array of lists), concatinate all lists into one)
@@ -101,7 +128,21 @@ end
 
 function process_text(text)
     """
-    Process input hash text before hashing 
+    Process input hash text before hashing. Converts to binary, appends length representation,
+    and splits into chunks of 512 (with necessary padding). 
+
+    Parameters
+    ----------
+
+    text : string
+        Raw, input text for hash algorithm 
+
+    Returns
+    -------
+    
+    bitList : list 
+        List of list of strings (these list of strings are 512 bits long and 
+        represent binary values with with "1" or "0" as entries). 
 
     """
 
@@ -151,6 +192,19 @@ function initialize_constants(constants)
     """
     Takes list of initial hash constants in hexidecimal and coverts to 
     list representing binary 
+
+    Parameters
+    ----------
+
+    constants : list
+        List of hexadecimal constants 
+    
+    Returns
+    -------
+
+    out : list
+        List of lists representing binary numbers (list of list of strings, "1" or "0"). 
+        Will be binary representation of each hexidecimal representation in input list
 
     """
 
@@ -228,7 +282,27 @@ isTrue(x) = return x == "1" #if 1 return true, else return false
 
 function if_(x, y, z)
     """
-    If x is 1, return the y value. Otherwise, return the z value
+    Simple if-else type function. If x is 1, return the y value. 
+    Otherwise, return the z value
+
+    Parameters
+    ----------
+
+    x : string
+        Either "1" or "0". Represents the "if" part here. 
+    
+    y : string
+        Either "1" or "0". Returned if x is "1"
+
+    z : string
+        Either "1" or "0". Returned if x is "0"
+
+    Returns
+    -------
+
+    out : string
+        This is the y value if x == "1" and the z value if
+        x == "0"
 
     """
 
@@ -255,6 +329,24 @@ function maj(x,y,z)
     Return 1 if 1 is majority, return 0 if 0 is majority. 
     Assumes all entries are either 1 or 0.
 
+    Parameters
+    ----------
+
+    x : string
+        Either "1" or "0"
+    
+    y : string
+        Either "1" or "0"
+
+    z : string
+        Either "1" or "0"
+
+    Returns
+    -------
+
+    out : string
+        Either "1" or "0". Will be the majority of x, y, z
+
     """
 
     if sum(parse.(Int,[x,y,z])) > 1
@@ -267,6 +359,23 @@ end
 function add(x,y)
     """
     Addes two binary numbers together and keeps same length (no carrying)
+
+    Parameters
+    ----------
+
+    x : List
+        List of strings (either 1 or 0) representing a binary number
+
+    y : List
+        List of strings (either 1 or 0) representing a binary number
+
+    Returns
+    -------
+
+    out : List
+        List of strings representing output of addition x + y. Caps length at length of x
+        so won't carry past that length. IE: 110 + 011 = 1001 but this function would instead
+        return 001
 
     """
 
