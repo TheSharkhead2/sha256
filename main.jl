@@ -264,31 +264,6 @@ function maj(x,y,z)
     end
 end
 
-# function add(x, y)
-#     """
-#     Add two binary numbers together (input as lists). Need to keep same length
-
-#     """
-
-#     maxLength = max(length(x), length(y)) #get make length of two to keep output at same length
-
-#     binarySum = parse(BigInt, join(x); base=2 ) + parse(BigInt, join(y); base=2) #convert the two to integers and add them 
-
-#     sumBitstring = bitstring(binarySum) #get bitstring of sum
-
-#     diffLength = maxLength - length(sumBitstring) #get difference between maximum length of output and current length of output 
-
-#     if diffLength > 0 #if this difference is less than 0, indicating it is over max length 
-#         sumBitstring = sumBitstring[1+(-diffLength):length(sumBitstring)] #shorten bitstring to correct length
-#     elseif diffLength < 0 #if this difference is above 0, then something is wrong probably because it has shrunk. So increase size to correct length
-#         lpad(sumBitstring, maxLength, "0") #extend to correct length
-#     end
-
-#     split(sumBitstring, "") #convert to list and return
-
-# end
-
-
 function add(x,y)
     """
     Addes two binary numbers together and keeps same length (no carrying)
@@ -312,6 +287,8 @@ function add(x,y)
 
 end
 
+hashInput = ARGS[1] #get the first command line argument and take as hash input
 
+hashOutput = sha256(string(hashInput)) #hash input and save as variable
 
-println(sha256("test"))
+println("The hash of '$hashInput' is: $hashOutput")
